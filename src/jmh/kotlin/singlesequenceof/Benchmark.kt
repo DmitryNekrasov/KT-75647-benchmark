@@ -9,6 +9,7 @@ import org.openjdk.jmh.annotations.OutputTimeUnit
 import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.Warmup
+import org.openjdk.jmh.infra.Blackhole
 import java.util.concurrent.TimeUnit
 
 @State(Scope.Benchmark)
@@ -19,5 +20,8 @@ import java.util.concurrent.TimeUnit
 @Measurement(iterations = 5, time = 1)
 open class Benchmark {
     @Benchmark
-    fun test() = 42
+    fun defaultSequenceOf(blackhole: Blackhole) {
+        val seq = sequenceOf(1)
+        blackhole.consume(seq)
+    }
 }
