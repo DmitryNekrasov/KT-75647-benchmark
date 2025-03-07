@@ -17,8 +17,6 @@ dependencies {
     jmh("org.openjdk.jmh:jmh-generator-annprocess:1.36")
     jmh(kotlin("stdlib"))
     jmh(kotlin("reflect"))
-    jmh("org.jetbrains.kotlinx:kotlinx-io-core:0.6.0")
-    jmh("org.jetbrains.kotlinx:kotlinx-io-bytestring:0.6.0")
 }
 
 tasks.test {
