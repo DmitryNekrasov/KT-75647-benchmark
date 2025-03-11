@@ -1,18 +1,10 @@
 package singlesequenceof
 
 import org.example.singlesequenceof.singleSequenceOf
-import org.openjdk.jmh.annotations.Benchmark
-import org.openjdk.jmh.annotations.BenchmarkMode
-import org.openjdk.jmh.annotations.Fork
-import org.openjdk.jmh.annotations.Measurement
-import org.openjdk.jmh.annotations.Mode
-import org.openjdk.jmh.annotations.OutputTimeUnit
-import org.openjdk.jmh.annotations.Param
-import org.openjdk.jmh.annotations.Scope
-import org.openjdk.jmh.annotations.State
-import org.openjdk.jmh.annotations.Warmup
+import org.openjdk.jmh.annotations.*
 import org.openjdk.jmh.infra.Blackhole
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
@@ -20,122 +12,88 @@ import java.util.concurrent.TimeUnit
 @Fork(2)
 @Warmup(iterations = 10, time = 1)
 @Measurement(iterations = 5, time = 1)
-open class SequenceBenchmarks {
+open class SequenceOperationsBenchmark {
 
-    @Param("1000")
-    private var count: Int = 0
-
-    @Param("1", "100")
-    private var operations: Int = 0
-
-    // Basic creation benchmarks
+    // Terminal operation benchmarks
     @Benchmark
-    fun defaultSequenceOfSingleCreation(blackhole: Blackhole) {
-        repeat(count) {
-            val seq = sequenceOf(1)
-            blackhole.consume(seq)
-        }
-    }
-
-    @Benchmark
-    fun singleSequenceOfCreation(blackhole: Blackhole) {
-        repeat(count) {
-            val seq = singleSequenceOf(1)
-            blackhole.consume(seq)
-        }
-    }
-
-    // Terminal operation benchmarks - first()
-    @Benchmark
-    fun defaultSequenceOfSingleFirst(blackhole: Blackhole) {
-        repeat(count) {
-            val result = sequenceOf(1).first()
-            blackhole.consume(result)
-        }
-    }
-
-    @Benchmark
-    fun singleSequenceOfFirst(blackhole: Blackhole) {
-        repeat(count) {
-            val result = singleSequenceOf(1).first()
-            blackhole.consume(result)
-        }
+    fun sequenceFirst(blackhole: Blackhole, state: SequenceState) {
+        var result = state.sequence.first()
+        blackhole.consume(result)
     }
 
     // Chain of transformations
     @Benchmark
-    fun defaultSequenceOfSingleChain(blackhole: Blackhole) {
-        repeat(count) {
-            var seq = sequenceOf(1)
-            repeat(operations) {
-                seq = seq.map { it * 2 }
-                    .filter { it > 0 }
-            }
-            blackhole.consume(seq.firstOrNull())
-        }
+    fun sequenceChain(blackhole: Blackhole, state: SequenceState) {
+        val result = state.sequence
+            .map { it * 3 }
+            .filter { (it and 1) == 0 }
+            .firstOrNull()
+        blackhole.consume(result)
     }
 
+    // Real-world scenario
     @Benchmark
-    fun singleSequenceOfChain(blackhole: Blackhole) {
-        repeat(count) {
-            var seq = singleSequenceOf(1)
-            repeat(operations) {
-                seq = seq.map { it * 2 }
-                    .filter { it > 0 }
-            }
-            blackhole.consume(seq.firstOrNull())
-        }
+    fun sequenceRealWorld(blackhole: Blackhole, state: SequenceState) {
+        val baseValue = 75
+        val result = state.sequence
+            .map { it + baseValue }
+            .filter { (it and 1) == 0 }
+            .map { it.toString() }
+            .map { it.length }
+            .sum()
+        blackhole.consume(result)
     }
 
-    // Polymorphic callsite benchmark - mix different sequence types
+    // Polymorphic call site benchmark
     @Benchmark
-    fun defaultSequenceOfPolymorphic(blackhole: Blackhole) {
-        repeat(count) {
-            val seq = if (it % 2 == 0) {
-                sequenceOf(1)
-            } else {
-                sequenceOf(1, 2, 3)
-            }
-            blackhole.consume(seq.firstOrNull())
-        }
-    }
-
-    @Benchmark
-    fun mixedSequenceOfPolymorphic(blackhole: Blackhole) {
-        repeat(count) {
-            val seq = if (it % 2 == 0) {
-                singleSequenceOf(1)
-            } else {
-                sequenceOf(1, 2, 3)
-            }
-            blackhole.consume(seq.firstOrNull())
-        }
-    }
-
-    // Real-world scenarios
-    @Benchmark
-    fun defaultSequenceOfRealWorld(blackhole: Blackhole) {
-        repeat(count) {
-            val result = sequenceOf(it)
+    fun polymorphicCallSite(blackhole: Blackhole, state: PolymorphicState) {
+        var sum = 0
+        for (seq in state.sequences) {
+            sum += seq
                 .map { it * 2 }
                 .filter { it > 0 }
-                .map { it.toString() }
-                .map { it.length }
-                .sum()
-            blackhole.consume(result)
+                .firstOrNull() ?: 0
+        }
+        blackhole.consume(sum)
+    }
+
+    @State(Scope.Thread)
+    open class SequenceState {
+        @Param("default", "single")
+        private lateinit var type: String
+
+        lateinit var sequence: Sequence<Int>
+
+        @Setup
+        fun setup() {
+            val element = Random.nextInt()
+            sequence = when (type) {
+                "default" -> sequenceOf(element)
+                "single" -> singleSequenceOf(element)
+                else -> throw IllegalArgumentException("Unknown sequence type: $type")
+            }
         }
     }
 
-    @Benchmark
-    fun singleSequenceOfRealWorld(blackhole: Blackhole) {
-        repeat(count) {
-            val result = singleSequenceOf(it)
-                .map { it * 2 }
-                .filter { it > 0 }
-                .map { it.toString() }
-                .map { it.length }
-                .sum()
-            blackhole.consume(result)
+    @State(Scope.Thread)
+    open class PolymorphicState {
+        @Param("default_only", "single_only", "mixed")
+        private lateinit var scenario: String
+
+        private val elements = List(100) { Random.nextInt() }
+        lateinit var sequences: List<Sequence<Int>>
+
+        @Setup
+        fun setup() {
+            sequences = when (scenario) {
+                "default_only" -> elements.map { sequenceOf(it) }
+                "single_only" -> elements.map { singleSequenceOf(it) }
+                "mixed" -> elements.mapIndexed { index, value ->
+                    if (index % 2 == 0) sequenceOf(value) else singleSequenceOf(value)
+                }
+
+                else -> throw IllegalArgumentException("Unknown scenario: $scenario")
+            }
         }
     }
 }
