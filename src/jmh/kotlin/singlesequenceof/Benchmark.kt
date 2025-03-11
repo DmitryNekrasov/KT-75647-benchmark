@@ -14,6 +14,19 @@ import kotlin.random.Random
 @Measurement(iterations = 5, time = 1)
 open class SequenceOperationsBenchmark {
 
+    // Basic creation benchmarks
+    @Benchmark
+    fun defaultSequenceOfSingleCreation(blackhole: Blackhole) {
+        val seq = sequenceOf(1)
+        blackhole.consume(seq)
+    }
+
+    @Benchmark
+    fun singleSequenceOfCreation(blackhole: Blackhole) {
+        val seq = singleSequenceOf(1)
+        blackhole.consume(seq)
+    }
+
     // Terminal operation benchmarks
     @Benchmark
     fun sequenceFirst(blackhole: Blackhole, state: SequenceState) {
@@ -37,6 +50,7 @@ open class SequenceOperationsBenchmark {
         val baseValue = 75
         val result = state.sequence
             .map { it + baseValue }
+            .map { it * 3 }
             .filter { (it and 1) == 0 }
             .map { it.toString() }
             .map { it.length }
