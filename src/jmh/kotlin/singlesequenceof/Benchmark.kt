@@ -16,15 +16,19 @@ open class SequenceOperationsBenchmark {
 
     // Basic creation benchmarks
     @Benchmark
-    fun sequenceOfCreationDefault(blackhole: Blackhole) {
-        val seq = sequenceOf(1)
-        blackhole.consume(seq)
+    fun sequenceOfCreationDefault(blackhole: Blackhole, state: CreationState) {
+        repeat(state.count) {
+            val seq = sequenceOf(1)
+            blackhole.consume(seq)
+        }
     }
 
     @Benchmark
-    fun sequenceOfCreationSingle(blackhole: Blackhole) {
-        val seq = singleSequenceOf(1)
-        blackhole.consume(seq)
+    fun sequenceOfCreationSingle(blackhole: Blackhole, state: CreationState) {
+        repeat(state.count) {
+            val seq = singleSequenceOf(1)
+            blackhole.consume(seq)
+        }
     }
 
     // Terminal operation benchmarks
@@ -70,6 +74,12 @@ open class SequenceOperationsBenchmark {
                 .firstOrNull() ?: 0
         }
         blackhole.consume(sum)
+    }
+
+    @State(Scope.Thread)
+    open class CreationState {
+        @Param("1", "10", "1000", "1000000")
+        var count: Int = 0
     }
 
     @State(Scope.Thread)
