@@ -39,7 +39,7 @@ open class SequenceOperationsBenchmark {
     fun sequenceChain(blackhole: Blackhole, state: SequenceState) {
         val result = state.sequence
             .map { it * 3 }
-            .filter { (it and 1) == 0 }
+            .filter { (it and 1) == 1 }
             .firstOrNull()
         blackhole.consume(result)
     }
@@ -47,11 +47,11 @@ open class SequenceOperationsBenchmark {
     // Real-world scenario
     @Benchmark
     fun sequenceRealWorld(blackhole: Blackhole, state: SequenceState) {
-        val baseValue = 75
+        val baseValue = 78
         val result = state.sequence
             .map { it + baseValue }
             .map { it * 3 }
-            .filter { (it and 1) == 0 }
+            .filter { (it and 1) == 1 }
             .map { it.toString() }
             .map { it.length }
             .sum()
@@ -66,6 +66,7 @@ open class SequenceOperationsBenchmark {
             sum += seq
                 .map { it * 2 }
                 .filter { it > 0 }
+                .filter { it % 2 == 0 }
                 .firstOrNull() ?: 0
         }
         blackhole.consume(sum)
@@ -80,7 +81,7 @@ open class SequenceOperationsBenchmark {
 
         @Setup
         fun setup() {
-            val element = Random.nextInt()
+            val element = Random.nextInt(0, 1_000_000) * 2 + 1
             sequence = when (type) {
                 "default" -> sequenceOf(element)
                 "single" -> singleSequenceOf(element)
@@ -94,7 +95,7 @@ open class SequenceOperationsBenchmark {
         @Param("default_only", "single_only", "mixed")
         private lateinit var scenario: String
 
-        private val elements = List(100) { Random.nextInt() }
+        private val elements = List(100) { Random.nextInt(0, 1_000_000) * 2 + 1 }
         lateinit var sequences: List<Sequence<Int>>
 
         @Setup
