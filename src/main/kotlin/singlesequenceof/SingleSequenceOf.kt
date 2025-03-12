@@ -1,6 +1,6 @@
-package org.example.singlesequenceof
+package singlesequenceof
 
-public fun <T> singleSequenceOf(element: T): Sequence<T> = Sequence {
+fun <T> singleSequenceOf(element: T): Sequence<T> = Sequence {
     object : Iterator<T> {
         private var _hasNext: Boolean = true
 
