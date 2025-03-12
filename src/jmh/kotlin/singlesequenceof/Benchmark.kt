@@ -81,7 +81,7 @@ open class SequenceOperationsBenchmark {
 
         @Setup
         fun setup() {
-            val element = Random.nextInt(0, 1_000_000) * 2 + 1
+            val element = RANDOM.nextInt(0, 1_000_000) * 2 + 1
             sequence = when (type) {
                 "default" -> sequenceOf(element)
                 "single" -> singleSequenceOf(element)
@@ -95,7 +95,7 @@ open class SequenceOperationsBenchmark {
         @Param("default_only", "single_only", "mixed")
         private lateinit var scenario: String
 
-        private val elements = List(100) { Random.nextInt(0, 1_000_000) * 2 + 1 }
+        private val elements = List(100) { RANDOM.nextInt(0, 1_000_000) * 2 + 1 }
         lateinit var sequences: List<Sequence<Int>>
 
         @Setup
@@ -110,5 +110,9 @@ open class SequenceOperationsBenchmark {
                 else -> throw IllegalArgumentException("Unknown scenario: $scenario")
             }
         }
+    }
+
+    companion object {
+        val RANDOM = Random(0xcafebabe)
     }
 }
