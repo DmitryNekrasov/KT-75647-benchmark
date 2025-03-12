@@ -16,13 +16,13 @@ open class SequenceOperationsBenchmark {
 
     // Basic creation benchmarks
     @Benchmark
-    fun defaultSequenceOfSingleCreation(blackhole: Blackhole) {
+    fun sequenceOfCreationDefault(blackhole: Blackhole) {
         val seq = sequenceOf(1)
         blackhole.consume(seq)
     }
 
     @Benchmark
-    fun singleSequenceOfCreation(blackhole: Blackhole) {
+    fun sequenceOfCreationSingle(blackhole: Blackhole) {
         val seq = singleSequenceOf(1)
         blackhole.consume(seq)
     }
